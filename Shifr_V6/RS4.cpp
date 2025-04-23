@@ -1,43 +1,42 @@
 #include "Header.h"
 
 bool RC4Cipher(char* filename1, char* filename2, char* key) {
-    //алгоритм состоит из двух частей: формирование s-блока и генерация псевдослучайного байта на каждый байт текста
-    ifstream file(filename1, ios::binary | ios::in);//файл-исходник
-    ofstream cipherfile(filename2, ios::binary | ios::out);//файл с шифротекстом
-    ifstream keyfile(key, ios::binary | ios::in);//файл с ключом
+    ifstream file(filename1, ios::binary | ios::in);
+    ofstream cipherfile(filename2, ios::binary | ios::out);
+    ifstream keyfile(key, ios::binary | ios::in);
     if ((!file.is_open()) || (!cipherfile.is_open()) || (!keyfile.is_open()))
         return false;
-    long long keyLenght = getSizeFile(key);//узнаем размер исходного файла
-    vector<unsigned char>s(256);//s-блок, который помогает шифровать исходные данные
-    //инициализация s-блока
+    long long keyLenght = getSizeFile(key);
+    vector<unsigned char>s(256);
+
     for (int i = 0; i < 256; i++) {
         s[i] = i;
     }
     int i, p = 0;
-    vector<unsigned char>byte_key(256);//массив с байтами ключа для удобства
-    char keybyte;//очередной байт из ключевого файла
+    vector<unsigned char>byte_key(256);
+    char keybyte;
     int ind = 0;
     while (keyfile.read(&keybyte, sizeof(char)) && ind < 256) {
-        byte_key[ind++] = keybyte;//переносим байты из ключевого файла в массив
+        byte_key[ind++] = keybyte;
     }
-    for (i = 0; i < 256; i++)//"тасовка" s-блока как часть его дальнейшей инициализации
+    for (i = 0; i < 256; i++)
     {
-        p = (p + s[i] + byte_key[i % (int)(keyLenght)]) % 256;//индекс байта для тасовки
-        swap(s[i], s[p]);//меняем местами элементы с i-тым и j-тым индексом
+        p = (p + s[i] + byte_key[i % (int)(keyLenght)]) % 256;
+        swap(s[i], s[p]);//Г¬ГҐГ­ГїГҐГ¬ Г¬ГҐГ±ГІГ Г¬ГЁ ГЅГ«ГҐГ¬ГҐГ­ГІГ» Г± i-ГІГ»Г¬ ГЁ j-ГІГ»Г¬ ГЁГ­Г¤ГҐГЄГ±Г®Г¬
     }
     i = p = 0;
-    //вторая часть алгоритма связана непосредственно с кодированием, на каждый байт текста генерируем псведослучайное слово (байт)
+    //ГўГІГ®Г°Г Гї Г·Г Г±ГІГј Г Г«ГЈГ®Г°ГЁГІГ¬Г  Г±ГўГїГ§Г Г­Г  Г­ГҐГЇГ®Г±Г°ГҐГ¤Г±ГІГўГҐГ­Г­Г® Г± ГЄГ®Г¤ГЁГ°Г®ГўГ Г­ГЁГҐГ¬, Г­Г  ГЄГ Г¦Г¤Г»Г© ГЎГ Г©ГІ ГІГҐГЄГ±ГІГ  ГЈГҐГ­ГҐГ°ГЁГ°ГіГҐГ¬ ГЇГ±ГўГҐГ¤Г®Г±Г«ГіГ·Г Г©Г­Г®ГҐ Г±Г«Г®ГўГ® (ГЎГ Г©ГІ)
     char byte;
     while (file.read(&byte, sizeof(char))) {
-        i = (i + 1) % 256;//делим индексы на длину s-блока, чтобы не выходить за пределы массива
+        i = (i + 1) % 256;//Г¤ГҐГ«ГЁГ¬ ГЁГ­Г¤ГҐГЄГ±Г» Г­Г  Г¤Г«ГЁГ­Гі s-ГЎГ«Г®ГЄГ , Г·ГІГ®ГЎГ» Г­ГҐ ГўГ»ГµГ®Г¤ГЁГІГј Г§Г  ГЇГ°ГҐГ¤ГҐГ«Г» Г¬Г Г±Г±ГЁГўГ 
         p = (p + s[i]) % 256;
-        swap(s[i], s[p]);//меняем местами (тасуем) элементы s-блока
-        unsigned char t = (s[i] + s[p]) % 256;//получаем по алгоритму rc4 номер байта в s-блоке - псевдослучайное слово для кодировки текущего байта
+        swap(s[i], s[p]);//Г¬ГҐГ­ГїГҐГ¬ Г¬ГҐГ±ГІГ Г¬ГЁ (ГІГ Г±ГіГҐГ¬) ГЅГ«ГҐГ¬ГҐГ­ГІГ» s-ГЎГ«Г®ГЄГ 
+        unsigned char t = (s[i] + s[p]) % 256;//ГЇГ®Г«ГіГ·Г ГҐГ¬ ГЇГ® Г Г«ГЈГ®Г°ГЁГІГ¬Гі rc4 Г­Г®Г¬ГҐГ° ГЎГ Г©ГІГ  Гў s-ГЎГ«Г®ГЄГҐ - ГЇГ±ГҐГўГ¤Г®Г±Г«ГіГ·Г Г©Г­Г®ГҐ Г±Г«Г®ГўГ® Г¤Г«Гї ГЄГ®Г¤ГЁГ°Г®ГўГЄГЁ ГІГҐГЄГіГ№ГҐГЈГ® ГЎГ Г©ГІГ 
         unsigned char k = s[t];
-        char resbyte = (byte ^ k);//xor'им байт текста и взятый из s-блока байт
-        cipherfile.write(&resbyte, sizeof(char));//записываем результат в шифротекст
-    }//на очередную итерацию массива проделываем тасовку s-блока снова, таким образом, уменьшаем возможность найти закономерности для криптоаналитика
-    //замена файла на зашифрованную версию
+        char resbyte = (byte ^ k);//xor'ГЁГ¬ ГЎГ Г©ГІ ГІГҐГЄГ±ГІГ  ГЁ ГўГ§ГїГІГ»Г© ГЁГ§ s-ГЎГ«Г®ГЄГ  ГЎГ Г©ГІ
+        cipherfile.write(&resbyte, sizeof(char));//Г§Г ГЇГЁГ±Г»ГўГ ГҐГ¬ Г°ГҐГ§ГіГ«ГјГІГ ГІ Гў ГёГЁГґГ°Г®ГІГҐГЄГ±ГІ
+    }//Г­Г  Г®Г·ГҐГ°ГҐГ¤Г­ГіГѕ ГЁГІГҐГ°Г Г¶ГЁГѕ Г¬Г Г±Г±ГЁГўГ  ГЇГ°Г®Г¤ГҐГ«Г»ГўГ ГҐГ¬ ГІГ Г±Г®ГўГЄГі s-ГЎГ«Г®ГЄГ  Г±Г­Г®ГўГ , ГІГ ГЄГЁГ¬ Г®ГЎГ°Г Г§Г®Г¬, ГіГ¬ГҐГ­ГјГёГ ГҐГ¬ ГўГ®Г§Г¬Г®Г¦Г­Г®Г±ГІГј Г­Г Г©ГІГЁ Г§Г ГЄГ®Г­Г®Г¬ГҐГ°Г­Г®Г±ГІГЁ Г¤Г«Гї ГЄГ°ГЁГЇГІГ®Г Г­Г Г«ГЁГІГЁГЄГ 
+    //Г§Г Г¬ГҐГ­Г  ГґГ Г©Г«Г  Г­Г  Г§Г ГёГЁГґГ°Г®ГўГ Г­Г­ГіГѕ ГўГҐГ°Г±ГЁГѕ
     file.close();
     cipherfile.close();
     keyfile.close();  
@@ -45,7 +44,7 @@ bool RC4Cipher(char* filename1, char* filename2, char* key) {
     rename(filename2, filename1);
     return true;
 }
-long long getSizeFile(char* filename) {//функция для выяснения размера в байтах
+long long getSizeFile(char* filename) {//ГґГіГ­ГЄГ¶ГЁГї Г¤Г«Гї ГўГ»ГїГ±Г­ГҐГ­ГЁГї Г°Г Г§Г¬ГҐГ°Г  Гў ГЎГ Г©ГІГ Гµ
     ifstream file(filename, ios::binary);
     file.seekg(0, file.end);
     long long res = file.tellg();
@@ -147,9 +146,9 @@ void parser_options(bool all_rashir,string d_or_dk_line, string path_to_dir, str
                             cout << name_rashir+"   ";
                     }
                     if (size_file)
-                        cout << "Размер: " << to_string(real_size_file) << "кб   ";
+                        cout << "ГђГ Г§Г¬ГҐГ°: " << to_string(real_size_file) << "ГЄГЎ   ";
                     if (time)
-                        cout << "Время: " << chrono::duration<float>(chrono::system_clock::now() - start).count() << 'c';
+                        cout << "Г‚Г°ГҐГ¬Гї: " << chrono::duration<float>(chrono::system_clock::now() - start).count() << 'c';
                     cout << endl;
                     if (log_edit) {
                         ofstream log;
@@ -178,9 +177,9 @@ void parser_options(bool all_rashir,string d_or_dk_line, string path_to_dir, str
             break;
     }
     
-    cout << "Кол-во: " << b << endl;
-    cout << "Размер в кб: " << size_files << endl;
-    cout << "Всего потрачено времени: " << chrono::duration<float>(chrono::system_clock::now() - start).count() << " секунд" << endl;
+    cout << "ГЉГ®Г«-ГўГ®: " << b << endl;
+    cout << "ГђГ Г§Г¬ГҐГ° Гў ГЄГЎ: " << size_files << endl;
+    cout << "Г‚Г±ГҐГЈГ® ГЇГ®ГІГ°Г Г·ГҐГ­Г® ГўГ°ГҐГ¬ГҐГ­ГЁ: " << chrono::duration<float>(chrono::system_clock::now() - start).count() << " Г±ГҐГЄГіГ­Г¤" << endl;
     
     
 }
@@ -220,7 +219,7 @@ void parser(bool all_rashir,string d_or_dk_line,string path_to_dir, string& rash
     }
 }
 
-bool folder_or_not(string path) { //Функция для проверки файла на папку
+bool folder_or_not(string path) { //Г”ГіГ­ГЄГ¶ГЁГї Г¤Г«Гї ГЇГ°Г®ГўГҐГ°ГЄГЁ ГґГ Г©Г«Г  Г­Г  ГЇГ ГЇГЄГі
     DWORD ftyp = GetFileAttributesA(path.c_str());
     if (ftyp == INVALID_FILE_ATTRIBUTES)
         return 0;   
@@ -288,13 +287,13 @@ vector<string> getDerectory_Iskl(string Derictory) {
     return spisok;
 }
 string wcharToUtf8(wchar_t wchar) {
-    char buffer[4]; // Максимум 4 байта для одного символа UTF-8
+    char buffer[4]; // ГЊГ ГЄГ±ГЁГ¬ГіГ¬ 4 ГЎГ Г©ГІГ  Г¤Г«Гї Г®Г¤Г­Г®ГЈГ® Г±ГЁГ¬ГўГ®Г«Г  UTF-8
     int size;
 
-    // Конвертируем wchar_t в UTF-8 с использованием wctomb_s
+    // ГЉГ®Г­ГўГҐГ°ГІГЁГ°ГіГҐГ¬ wchar_t Гў UTF-8 Г± ГЁГ±ГЇГ®Г«ГјГ§Г®ГўГ Г­ГЁГҐГ¬ wctomb_s
     if (wctomb_s(&size, buffer, sizeof(buffer), wchar) != 0) {
-        throw std::runtime_error("Не удалось конвертировать символ.");
+        throw std::runtime_error("ГЌГҐ ГіГ¤Г Г«Г®Г±Гј ГЄГ®Г­ГўГҐГ°ГІГЁГ°Г®ГўГ ГІГј Г±ГЁГ¬ГўГ®Г«.");
     }
 
-    return std::string(buffer, size); // Создаем строку из буфера
+    return std::string(buffer, size); // Г‘Г®Г§Г¤Г ГҐГ¬ Г±ГІГ°Г®ГЄГі ГЁГ§ ГЎГіГґГҐГ°Г 
 }
